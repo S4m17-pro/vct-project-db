@@ -37,7 +37,7 @@ Maintenance database: vct_stats
 
 Username: admin
 
-Password: password123
+Password: vctLS
 
 📋 Reglas de Trabajo (Workflow)
 Para mantener el proyecto organizado mientras avanzamos en el semestre:
