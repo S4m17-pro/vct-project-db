@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:15
+    container_name: vct_postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: vct_stats
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: vctLS # Cambia esto luego con Lewis
+    ports:
+      - "5432:5432"
+    volumes:
+      - vct_postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+
+volumes:
+  vct_postgres_data:
+    # Aquí es donde ocurre la magia para que no se borre nada
+
