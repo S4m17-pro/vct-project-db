@@ -1,3 +1,24 @@
+-- Creación de Roles/Usuarios
+-- Nota: En Docker/Postgres, los roles se crean a nivel de instancia
+CREATE USER usuario_consulta WITH PASSWORD 'consulta123';
+CREATE USER usuario_editor WITH PASSWORD 'editor123';
+
+-- 1. Privilegios para el Consultor (Solo Lectura)
+-- Le permitimos conectarse a la base de datos
+GRANT CONNECT ON DATABASE vct_stats TO usuario_consulta;
+-- Le damos permiso para ver las tablas en el esquema público
+GRANT USAGE ON SCHEMA public TO usuario_consulta;
+-- Solo puede hacer SELECT en todas las tablas actuales
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO usuario_consulta;
+
+-- 2. Privilegios para el Editor (CRUD)
+GRANT CONNECT ON DATABASE vct_stats TO usuario_editor;
+GRANT USAGE ON SCHEMA public TO usuario_editor;
+-- Puede leer, insertar, actualizar y borrar datos
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO usuario_editor;
+-- Importante: darle permisos sobre las secuencias (para los IDs autoincrementales)
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO usuario_editor;
+
 -- 1. Tablas Independientes (Nivel 1)
 CREATE TABLE Rol (
     Cod_Rol VARCHAR(10) PRIMARY KEY,
