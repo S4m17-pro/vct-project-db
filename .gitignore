@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Base de Datos / Docker
+vct_postgres_data/
+.docker/
+
+# IDEs
+.vscode/
+.idea/
+
+# SO
+Thumbs.db
+Desktop.ini
