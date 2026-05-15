@@ -19,6 +19,19 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO usuario_e
 -- Importante: darle permisos sobre las secuencias (para los IDs autoincrementales)
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO usuario_editor;
 
+-- 3. Usuario Lewis (Colaborador)
+-- Creamos a Lewis con permisos similares al editor para que pueda trabajar
+CREATE USER lewis WITH PASSWORD 'lewis123';
+GRANT CONNECT ON DATABASE vct_stats TO lewis;
+GRANT USAGE ON SCHEMA public TO lewis;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO lewis;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO lewis;
+
+-- Permisos para que Lewis pueda ver y ejecutar funciones/procedimientos futuros
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO lewis;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO lewis;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO lewis;
+
 -- 1. Tablas Independientes (Nivel 1)
 CREATE TABLE Rol (
     Cod_Rol VARCHAR(10) PRIMARY KEY,
@@ -141,4 +154,14 @@ CREATE TABLE Uso_Armas_Jugador (
     Id_ArmaFK VARCHAR(10) REFERENCES Arma(Id_Arma),
     Kills_con_arma INTEGER DEFAULT 0,
     Dano_con_arma INTEGER DEFAULT 0
+);
+
+-- 4. Tabla de Auditoría (Para Triggers)
+CREATE TABLE Audit_Log (
+    Id_Audit SERIAL PRIMARY KEY,
+    Tabla_Afectada VARCHAR(50),
+    Operacion VARCHAR(20),
+    Usuario VARCHAR(50),
+    Fecha_Hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Detalle TEXT
 );
