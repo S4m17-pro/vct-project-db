@@ -10,6 +10,8 @@ CREATE OR REPLACE PROCEDURE sp_registrar_partida(
     p_fase INTEGER,
     p_id_torneo VARCHAR,
     p_id_mapa VARCHAR,
+    p_id_equipo1 VARCHAR,
+    p_id_equipo2 VARCHAR,
     p_score1 INTEGER,
     p_score2 INTEGER,
     p_duracion TIME
@@ -20,6 +22,13 @@ BEGIN
     -- Insertar en la tabla de Partida
     INSERT INTO Partida (Id_Partida, Fase, Id_TorneoFK, fecha)
     VALUES (p_id_partida, p_fase, p_id_torneo, CURRENT_DATE);
+
+    -- Insertar la relacion de los equipos con la partida y quien ganó
+    INSERT INTO Partido_Equipo (Id_PartidaFK, Id_EquipoFK, Indicador_victoria)
+    VALUES (p_id_partida, p_id_equipo1, p_score1 > p_score2);
+
+    INSERT INTO Partido_Equipo (Id_PartidaFK, Id_EquipoFK, Indicador_victoria)
+    VALUES (p_id_partida, p_id_equipo2, p_score2 > p_score1);
 
     -- Insertar en las estadísticas de la partida
     INSERT INTO Estadistica_Partida (ID_Estadistica, Puntuacion_equipo1, Puntuacion_equipo2, Duracion, Id_PartidaFK, Id_MapaFK)

@@ -46,3 +46,7 @@ FROM Partida p
 JOIN Torneo t ON p.Id_TorneoFK = t.Id_Torneo
 JOIN Estadistica_Partida ep ON p.Id_Partida = ep.Id_PartidaFK
 JOIN Mapa m ON ep.Id_MapaFK = m.Id_Mapa;
+
+-- OTORGAR PERMISOS A LAS VISTAS
+-- Esto arregla el error de "permission denied" porque las vistas se crean después del GRANT inicial
+GRANT SELECT ON Vista_Resumen_Jugadores, Vista_Estadisticas_Equipos, Vista_Detalles_Partida TO usuario_consulta, usuario_editor, lewis;

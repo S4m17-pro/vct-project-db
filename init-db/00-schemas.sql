@@ -3,21 +3,14 @@
 CREATE USER usuario_consulta WITH PASSWORD 'consulta123';
 CREATE USER usuario_editor WITH PASSWORD 'editor123';
 
--- 1. Privilegios para el Consultor (Solo Lectura)
+-- 1. Privilegios básicos para el Consultor
 -- Le permitimos conectarse a la base de datos
 GRANT CONNECT ON DATABASE vct_stats TO usuario_consulta;
--- Le damos permiso para ver las tablas en el esquema público
 GRANT USAGE ON SCHEMA public TO usuario_consulta;
--- Solo puede hacer SELECT en todas las tablas actuales
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO usuario_consulta;
 
--- 2. Privilegios para el Editor (CRUD)
+-- 2. Privilegios básicos para el Editor
 GRANT CONNECT ON DATABASE vct_stats TO usuario_editor;
 GRANT USAGE ON SCHEMA public TO usuario_editor;
--- Puede leer, insertar, actualizar y borrar datos
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO usuario_editor;
--- Importante: darle permisos sobre las secuencias (para los IDs autoincrementales)
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO usuario_editor;
 
 -- 3. Usuario Lewis (Colaborador)
 -- Creamos a Lewis con permisos similares al editor para que pueda trabajar
@@ -165,3 +158,14 @@ CREATE TABLE Audit_Log (
     Fecha_Hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Detalle TEXT
 );
+
+-- ==========================================
+-- ASIGNACIÓN DE PERMISOS A TABLAS RECIÉN CREADAS
+-- ==========================================
+
+-- Permisos para usuario_consulta (Solo lectura de todas las tablas actuales)
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO usuario_consulta;
+
+-- Permisos para usuario_editor (CRUD de todas las tablas y uso de secuencias)
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO usuario_editor;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO usuario_editor;
