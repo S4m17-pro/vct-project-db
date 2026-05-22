@@ -27,6 +27,7 @@ BEGIN
     INSERT INTO Partido_Equipo (Id_PartidaFK, Id_EquipoFK, Indicador_victoria)
     VALUES (p_id_partida, p_id_equipo1, p_score1 > p_score2);
 
+    -- Insertar la relacion de los equipos con la partida y quien ganó (Equipo 2)
     INSERT INTO Partido_Equipo (Id_PartidaFK, Id_EquipoFK, Indicador_victoria)
     VALUES (p_id_partida, p_id_equipo2, p_score2 > p_score1);
 
@@ -34,14 +35,13 @@ BEGIN
     INSERT INTO Estadistica_Partida (ID_Estadistica, Puntuacion_equipo1, Puntuacion_equipo2, Duracion, Id_PartidaFK, Id_MapaFK)
     VALUES ('EST' || p_id_partida, p_score1, p_score2, p_duracion, p_id_partida, p_id_mapa);
 
-    COMMIT;
     RAISE NOTICE 'Partida % registrada exitosamente con sus estadísticas.', p_id_partida;
 EXCEPTION
     WHEN OTHERS THEN
-        ROLLBACK;
         RAISE EXCEPTION 'Error al registrar la partida: %', SQLERRM;
 END;
 $$;
+
 
 -- 2. Procedimiento para Actualizar KDA de Jugador
 CREATE OR REPLACE PROCEDURE sp_actualizar_kda_jugador(
@@ -59,6 +59,5 @@ BEGIN
         assists = p_assists
     WHERE Id_estadistica_jugador = p_id_est_jugador;
 
-    COMMIT;
 END;
 $$;

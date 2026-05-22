@@ -24,13 +24,30 @@ INSERT INTO Ultimate (Id_Ultimate, Nombre_Ultimate, Dano, Puntos_de_ulti, Tiempo
 INSERT INTO Mapa (Id_Mapa, Nombre_Mapa, Ubicacion, Cantidad_Orbes, Cantidad_Sites) VALUES
 ('M01', 'Ascent', 'Italia', 2, 2),
 ('M02', 'Bind', 'Marruecos', 2, 2),
-('M03', 'Lotus', 'India', 3, 3);
+('M03', 'Lotus', 'India', 3, 3)
+('M04', 'Haven', 'Bután', 2, 3),
+('M05', 'Split', 'Japón', 2, 2),
+('M06', 'Icebox', 'Rusia', 2, 2),
+('M07', 'Breeze', 'Triángulo de las Bermudas', 2, 2),
+('M08', 'Fracture', 'Estados Unidos', 4, 2),
+('M09', 'Pearl', 'Portugal', 2, 2),
+('M10', 'Sunset', 'Estados Unidos', 2, 2),
+('M11', 'Abyss', 'Islandia', 2, 2);
 
 -- Equipos
 INSERT INTO Equipo (Id_Equipo, Nombre_Equipo, Coach, Region) VALUES
 ('E01', 'KRU Esports', 'Atom', 'Americas'),
 ('E02', 'Leviatán', 'Goked', 'Americas'),
-('E03', 'LOUD', 'Peu', 'Americas');
+('E03', 'LOUD', 'Peu', 'Americas')
+('E04', 'Sentinels', 'kaplan', 'Americas'),
+('E05', '100 Thieves', 'Zikz', 'Americas'),
+('E06', 'Cloud9', 'Immi', 'Americas'),
+('E07', 'Evil Geniuses', 'Potter', 'Americas'),
+('E08', 'NRG', 'Chet', 'Americas'),
+('E09', 'FURIA Esports', 'In切り', 'Americas'),
+('E10', 'MIBR', 'fRoD', 'Americas'),
+('E11', 'G2 Esports', 'JoshRT', 'Americas'),
+('E12', 'KRU Elite', 'Atom', 'Americas');
 
 -- Torneos
 INSERT INTO Torneo (Id_Torneo, nombre_torneo, Region, Fecha_inicio, Fecha_fin, Ubicacion, Premio_total) VALUES
@@ -61,7 +78,8 @@ INSERT INTO Habilidad (Id_Habilidad, Nombre_Habilidad, Tecla, Dano, Cargas, Tiem
 -- Partidas
 INSERT INTO Partida (Id_Partida, fecha, Fase, Id_TorneoFK) VALUES
 ('P01', '2026-04-10', 1, 'T01'),
-('P02', '2026-04-12', 1, 'T01');
+('P02', '2026-04-12', 1, 'T01'),
+('P03', '2026-04-15', 1, 'T01');
 
 -- Jugadores
 INSERT INTO Jugador (Id_Player, Nombre, Pais, Agente, Id_Equipo) VALUES
@@ -69,7 +87,12 @@ INSERT INTO Jugador (Id_Player, Nombre, Pais, Agente, Id_Equipo) VALUES
 ('J02', 'Melser', 'Chile', 'AG04', 'E01'),
 ('J03', 'Aspas', 'Brasil', 'AG01', 'E02'),
 ('J04', 'Mazino', 'Chile', 'AG04', 'E02'),
-('J05', 'Less', 'Brasil', 'AG02', 'E03');
+('J05', 'Less', 'Brasil', 'AG02', 'E03'),
+('J06', 'TenZ', 'Canadá', 'AG01', 'E04'),
+('J07', 'Zellsis', 'Estados Unidos', 'AG04', 'E04'),
+('J08', 'Asuna', 'Estados Unidos', 'AG03', 'E05'),
+('J09', 'Cryocells', 'Estados Unidos', 'AG01', 'E05'),
+('J10', 'eeiu', 'Canadá', 'AG03', 'E11');
 
 -- ==========================================
 -- NIVEL 3: Tablas Relacionales y Estadísticas
@@ -83,7 +106,9 @@ INSERT INTO Agente_Habilidad (Id_AgenteFK, Id_HabilidadFK, Orden_Habilidad) VALU
 -- Partido_Equipo (P01: KRU vs Leviatán, gana Leviatán)
 INSERT INTO Partido_Equipo (Id_PartidaFK, Id_EquipoFK, Indicador_victoria) VALUES
 ('P01', 'E01', FALSE),
-('P01', 'E02', TRUE);
+('P01', 'E02', TRUE),
+('P03', 'E04', TRUE),
+('P03', 'E05', FALSE);
 
 -- Partido_Equipo (P02: LOUD vs KRU, gana LOUD)
 INSERT INTO Partido_Equipo (Id_PartidaFK, Id_EquipoFK, Indicador_victoria) VALUES
@@ -93,7 +118,8 @@ INSERT INTO Partido_Equipo (Id_PartidaFK, Id_EquipoFK, Indicador_victoria) VALUE
 -- Estadistica_Partida
 INSERT INTO Estadistica_Partida (ID_Estadistica, Puntuacion_equipo1, Puntuacion_equipo2, Duracion, Id_PartidaFK, Id_MapaFK) VALUES
 ('EP01', 11, 13, '00:45:00', 'P01', 'M01'),
-('EP02', 13, 9, '00:38:00', 'P02', 'M02');
+('EP02', 13, 9, '00:38:00', 'P02', 'M02'),
+('EP03', 13, 10, '00:51:12', 'P03', 'M10');
 
 -- Estadistica_Jugador (Kills, Deaths, Assists)
 INSERT INTO Estadistica_Jugador (Id_estadistica_jugador, kills, death, assists, Id_PlayerFK, Id_AgenteFK, Id_Partido) VALUES
@@ -104,8 +130,11 @@ INSERT INTO Estadistica_Jugador (Id_estadistica_jugador, kills, death, assists, 
 
 -- Partida 2: LOUD vs KRU
 ('EJ04', 22, 14, 8, 'J05', 'AG02', 'P02'), -- Less
-('EJ05', 18, 19, 6, 'J01', 'AG03', 'P02'); -- Keznit
+('EJ05', 18, 19, 6, 'J01', 'AG03', 'P02'), -- Keznit
 
+('EJ06', 29, 12, 6, 'J06', 'AG01', 'P03'), -- TenZ con Jett
+('EJ07', 15, 14, 18, 'J07', 'AG04', 'P03'), -- Zellsis 
+('EJ08', 21, 18, 4, 'J08', 'AG03', 'P03');
 -- Uso_Armas_Jugador
 INSERT INTO Uso_Armas_Jugador (Id_Uso_Arma, Id_estadistica_jugadorFK, Id_ArmaFK, Kills_con_arma, Dano_con_arma) VALUES
 ('UA01', 'EJ01', 'A01', 20, 3000), -- Keznit Vandal
