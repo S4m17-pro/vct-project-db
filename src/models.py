@@ -1,6 +1,6 @@
 from typing import Optional
-from sqlmodel import SQLModel, Field
-from datetime import date
+from sqlmodel import SQLModel, Field,Column, DateTime
+from datetime import date,datetime
 
 # ==========================================
 # TABLAS INDEPENDIENTES (Nivel 1 - 00-schemas.sql)
@@ -82,12 +82,12 @@ class Partida(SQLModel, table=True):
     Id_TorneoFK: Optional[str] = Field(default=None, foreign_key="Torneo.Id_Torneo")
 
 class Jugador(SQLModel, table=True):
-    __tablename__: str = "jugador" 
-    id_player: str = Field(primary_key=True, foreign_key="id_player")
-    nombre: str
-    pais: str
-    agente: str
-    id_equipo: Optional[str] = Field(default=None, foreign_key="equipo.id_equipo")
+    __tablename__: str = "jugador"
+    id_player: str = Field(primary_key=True, validation_alias="Id_Player")
+    nombre: str = Field(validation_alias="Nombre")
+    pais: str = Field(validation_alias="Pais")
+    agente: str = Field(validation_alias="Agente")
+    id_equipo: Optional[str] = Field(default=None, validation_alias="Id_Equipo")
 
 # ==========================================
 # TABLAS DE RELACIÓN Y ESTADÍSTICAS (Nivel 3 - 00-schemas.sql)
@@ -119,14 +119,13 @@ class Estadistica_Jugador(SQLModel, table=True):
     Id_Partido: Optional[str] = Field(default=None, foreign_key="Partida.Id_Partida")
 
 class Audit_Log(SQLModel, table=True):
-    __tablename__ = "Audit_Log"
-    Id_Audit: Optional[int] = Field(default=None, primary_key=True)
-    Tabla_Afectada: str
-    Operacion: str
-    Usuario: str
-    Fecha_Hora: Optional[date] = None
-    Detalle: str
-
+    __tablename__: str = "audit_log"
+    id_audit: Optional[int] = Field(default=None, primary_key=True)
+    tabla_afectada: str
+    operacion: str
+    usuario: str
+    fecha_hora: datetime = Field(sa_column=Column(DateTime(timezone=False)))
+    detalle: Optional[str] = Field(default=None)
 # ==========================================
 # MODELOS PARA LAS VISTAS (01-views.sql)
 # ==========================================
