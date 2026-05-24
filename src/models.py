@@ -171,3 +171,16 @@ class ProcedimientoPartidaInput(SQLModel):
     p_score1: int
     p_score2: int
     p_duracion: str  # Ejemplo: "00:45:00"
+
+
+
+class Usuario(SQLModel, table=True):
+    __tablename__: str = "usuario"
+    
+    id_usuario: Optional[int] = Field(default=None, primary_key=True)
+    username: str = Field(unique=True, index=True)
+    password_hash: str  # En producción se encripta, para tu entrega puedes guardarla en texto plano o usar bcrypt
+    rol_usuario: str = Field(default="Auditor") # 'Admin' (crea/modifica) o 'Auditor' (solo lee)
+
+ 
+    

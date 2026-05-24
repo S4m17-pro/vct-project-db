@@ -24,6 +24,21 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO lewis;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO lewis;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO lewis;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO lewis;
+
+
+-- Aseguramos que la tabla exista en la BD
+CREATE TABLE IF NOT EXISTS Usuario (
+    id_usuario SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    rol_usuario VARCHAR(20) DEFAULT 'Auditor' CHECK (rol_usuario IN ('Admin', 'Auditor'))
+);
+
+-- Insertamos los usuarios equivalentes a tus roles de Postgres
+INSERT INTO Usuario (username, password_hash, rol_usuario) VALUES
+('usuario_editor', 'editor123', 'Admin'),   -- Permiso de modificación completa (Admin)
+('lewis', 'lewis123', 'Admin'),            -- Lewis también tiene todos los poderes
+('usuario_consulta', 'consulta123', 'Auditor'); -- Solo lectura
 -- ==============================================================================
 -- 0. CREACIÓN DE SECUENCIAS (Para automatizar los IDs de todas las tablas)
 -- ==============================================================================
