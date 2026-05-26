@@ -33,19 +33,64 @@ GROUP BY e.Nombre_Equipo;
 
 -- 3. Vista Detalles de Partida
 -- Une Partida, Torneo y Estadísticas de Mapa
-CREATE OR REPLACE VIEW Vista_Detalles_Partida AS
+
+CREATE VIEW vista_detalles_partida AS
+WITH posiciones AS (
+    SELECT 
+        pe.id_partidafk,
+        pe.id_equipofk,
+        eq.nombre_equipo,
+        pe.indicador_victoria,
+        ROW_NUMBER() OVER (PARTITION BY pe.id_partidafk ORDER BY pe.id_equipofk) as rn
+    FROM partido_equipo pe
+    JOIN equipo eq ON pe.id_equipofk = eq.id_equipo
+)
 SELECT 
-    p.Id_Partida,
-    t.nombre_torneo AS Torneo,
-    m.Nombre_Mapa AS Mapa,
-    ep.Puntuacion_equipo1 AS Score_E1,
-    ep.Puntuacion_equipo2 AS Score_E2,
-    ep.Duracion,
-    p.fecha
-FROM Partida p
-JOIN Torneo t ON p.Id_TorneoFK = t.Id_Torneo
-JOIN Estadistica_Partida ep ON p.Id_Partida = ep.Id_PartidaFK
-JOIN Mapa m ON ep.Id_MapaFK = m.Id_Mapa;
+    p.id_partida,
+    t.nombre_torneo AS torneo,            -- Mapeado con la columna exacta
+    m.nombre_mapa AS mapa,                -- Mapeado con la columna exacta
+    p.fase,
+    p.fecha,
+    ep.puntuacion_equipo1 AS score_e1, 
+    ep.puntuacion_equipo2 AS score_e2,
+    ep.duracion,
+    -- Nombres comerciales de los equipos para las tarjetas y las tablas
+    e1.nombre_equipo AS equipo_1,
+    e2.nombre_equipo AS equipo_2,
+    -- El residuo del ganador se calcula devolviendo el nombre del equipo que tenga 'true'
+    CASE 
+        WHEN e1.indicador_victoria = true THEN e1.nombre_equipo
+        ELSE e2.nombre_equipo
+    END AS ganador
+FROM partida p
+JOIN torneo t ON p.id_torneofk = t.id_torneo
+JOIN estadistica_partida ep ON p.id_partida = ep.id_partidafk
+JOIN mapa m ON ep.id_mapafk = m.id_mapa
+LEFT JOIN posiciones e1 ON p.id_partida = e1.id_partidafk AND e1.rn = 1
+LEFT JOIN posiciones e2 ON p.id_partida = e2.id_partidafk AND e2.rn = 2;
+
+DROP VIEW IF EXISTS vista_meta_agentes CASCADE;
+
+CREATE VIEW vista_meta_agentes AS
+WITH total_partidas AS (
+    SELECT COUNT(DISTINCT id_partida) AS total FROM partida
+),
+conteos AS (
+    SELECT 
+        id_agentefk, -- Ajusta si se llama id_agente o similar
+        COUNT(*) AS veces_elegido
+    FROM estadistica_jugador -- Tu tabla de estadísticas de jugador
+    GROUP BY id_agentefk
+)
+SELECT 
+    a.nombre_agente, -- O el campo de texto con el nombre (ej: Jett, Omen)
+    a.rol,           -- Opcional: Duelista, Controlador, etc.
+    c.veces_elegido,
+    -- Porcentaje: (veces_elegido / total_partidas) * 100
+    ROUND((c.veces_elegido::numeric / (SELECT total FROM total_partidas)) * 100, 1) AS pick_rate
+FROM conteos c
+JOIN agente a ON c.id_agentefk = a.id_agente -- Ajusta según tu maestro de agentes
+ORDER BY pick_rate DESC;
 
 -- OTORGAR PERMISOS A LAS VISTAS
 -- Esto arregla el error de "permission denied" porque las vistas se crean después del GRANT inicial
