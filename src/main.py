@@ -202,13 +202,19 @@ def login(request_data: LoginRequest, session: Session = Depends(get_session)):
 # ENDPOINTS PARA JUGADORES
 # ==============================================================================
 @app.put("/jugadores/{id_player}", tags=["Jugadores"])
-def modificar_jugador(id_player: str, jugador_update: Jugador, session: Session = Depends(get_session)):
+def modificar_jugador(id_player: str, jugador_data: dict, session: Session = Depends(get_session)):
     db_jugador = session.get(Jugador, id_player)
     if not db_jugador:
         raise HTTPException(status_code=404, detail="Jugador no encontrado")
     
+    # Tolerancia de Casing
+    nombre = jugador_data.get("Nombre") or jugador_data.get("nombre")
+    pais = jugador_data.get("Pais") or jugador_data.get("pais")
+    agente = jugador_data.get("Agente") or jugador_data.get("agente")
+    id_equipo = jugador_data.get("Id_Equipo") or jugador_data.get("id_equipo")
+
     # Resolver nombre de agente a ID si es necesario
-    nuevo_agente = jugador_update.agente
+    nuevo_agente = agente
     if nuevo_agente and not nuevo_agente.startswith("AG"):
         agente_query = text("SELECT id_agente FROM agente WHERE nombre_agente ILIKE :nombre")
         agente_db = session.execute(agente_query, {"nombre": nuevo_agente}).fetchone()
@@ -218,15 +224,29 @@ def modificar_jugador(id_player: str, jugador_update: Jugador, session: Session 
             raise HTTPException(status_code=400, detail=f"El agente '{nuevo_agente}' no existe.")
 
     # Actualizamos los campos recibidos
-    db_jugador.nombre = jugador_update.nombre
-    db_jugador.pais = jugador_update.pais
-    db_jugador.agente = nuevo_agente
-    db_jugador.id_equipo = jugador_update.id_equipo
+    if nombre:
+        db_jugador.nombre = nombre
+    if pais is not None:
+        db_jugador.pais = pais
+    if nuevo_agente:
+        db_jugador.agente = nuevo_agente
+    if id_equipo is not None:
+        db_jugador.id_equipo = id_equipo
     
     session.add(db_jugador)
     session.commit()
     session.refresh(db_jugador)
     return {"message": "Jugador modificado exitosamente", "jugador": db_jugador}
+
+@app.delete("/jugadores/{id_player}", tags=["Jugadores"])
+def eliminar_jugador(id_player: str, session: Session = Depends(get_session)):
+    db_jugador = session.get(Jugador, id_player)
+    if not db_jugador:
+        raise HTTPException(status_code=404, detail="Jugador no encontrado")
+    
+    session.delete(db_jugador)
+    session.commit()
+    return {"message": f"Jugador {id_player} eliminado correctamente"}
 
 # ==============================================================================
 # ENDPOINTS PARA EQUIPOS (Creación y Modificación)
@@ -338,23 +358,55 @@ def listar_equipos(session: Session = Depends(get_session)):
 # ==============================================================================
 # ENDPOINTS PARA TORNEOS
 # ==============================================================================
+@app.post("/torneos", tags=["Torneos"])
+def crear_torneo(torneo_data: dict, session: Session = Depends(get_session)):
+    try:
+        insert_query = text("""
+            INSERT INTO torneo (nombre_torneo, region, fecha_inicio, fecha_fin, ubicacion, premio_total)
+            VALUES (:nombre_torneo, :region, :fecha_inicio, :fecha_fin, :ubicacion, :premio_total)
+            RETURNING id_torneo;
+        """)
+        result = session.execute(insert_query, {
+            "nombre_torneo": torneo_data.get("nombre_torneo", "Sin nombre"),
+            "region": torneo_data.get("region", "Global"),
+            "fecha_inicio": torneo_data.get("fecha_inicio", "2026-01-01"),
+            "fecha_fin": torneo_data.get("fecha_fin", "2026-12-31"),
+            "ubicacion": torneo_data.get("ubicacion", "Desconocida"),
+            "premio_total": torneo_data.get("premio_total", 0)
+        }).fetchone()
+        session.commit()
+        return {"message": "Torneo creado exitosamente", "id_torneo": result[0]}
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.put("/torneos/{id_torneo}", tags=["Torneos"])
-def modificar_torneo(id_torneo: str, torneo_update: Torneo, session: Session = Depends(get_session)):
+def modificar_torneo(id_torneo: str, torneo_data: dict, session: Session = Depends(get_session)):
     db_torneo = session.get(Torneo, id_torneo)
     if not db_torneo:
         raise HTTPException(status_code=404, detail="Torneo no encontrado")
         
-    db_torneo.nombre_torneo = torneo_update.nombre_torneo
-    db_torneo.region = torneo_update.region
-    db_torneo.fecha_inicio = torneo_update.fecha_inicio
-    db_torneo.fecha_fin = torneo_update.fecha_fin
-    db_torneo.ubicacion = torneo_update.ubicacion
-    db_torneo.premio_total = torneo_update.premio_total
+    db_torneo.nombre_torneo = torneo_data.get("nombre_torneo", db_torneo.nombre_torneo)
+    db_torneo.region = torneo_data.get("region", db_torneo.region)
+    if "fecha_inicio" in torneo_data: db_torneo.fecha_inicio = torneo_data["fecha_inicio"]
+    if "fecha_fin" in torneo_data: db_torneo.fecha_fin = torneo_data["fecha_fin"]
+    if "ubicacion" in torneo_data: db_torneo.ubicacion = torneo_data["ubicacion"]
+    if "premio_total" in torneo_data: db_torneo.premio_total = torneo_data["premio_total"]
     
     session.add(db_torneo)
     session.commit()
     session.refresh(db_torneo)
     return {"message": "Torneo modificado exitosamente", "torneo": db_torneo}
+
+@app.delete("/torneos/{id_torneo}", tags=["Torneos"])
+def eliminar_torneo(id_torneo: str, session: Session = Depends(get_session)):
+    db_torneo = session.get(Torneo, id_torneo)
+    if not db_torneo:
+        raise HTTPException(status_code=404, detail="Torneo no encontrado")
+    
+    session.delete(db_torneo)
+    session.commit()
+    return {"message": f"Torneo {id_torneo} eliminado correctamente"}
 
 @app.get("/torneos", tags=["Torneos"])
 def listar_torneos(session: Session = Depends(get_session)):
