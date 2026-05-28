@@ -1,4 +1,4 @@
-﻿import os
+import os
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
@@ -21,7 +21,8 @@ from models import (
     ProcedimientoPartidaInput,
     Usuario,
     Equipo,
-    Torneo
+    Torneo,
+    Agente
 )
 
 # Inicialización de la API
@@ -79,11 +80,39 @@ def crear_jugador(jugador_in: JugadorCreate, session: Session = Depends(get_sess
     Inserta un Jugador. Al ejecutarse, PostgreSQL disparará de manera 
     automática el trigger 'trg_auditoria_jugador' poblando la tabla Audit_Log.
     """
-    db_jugador = Jugador.model_validate(jugador_in)
-    session.add(db_jugador)
-    session.commit()
-    session.refresh(db_jugador)
-    return db_jugador
+    # Resolver nombre de agente a ID si es necesario
+    if jugador_in.Agente and not jugador_in.Agente.startswith("AG"):
+        agente_query = text("SELECT id_agente FROM agente WHERE nombre_agente ILIKE :nombre")
+        agente_db = session.execute(agente_query, {"nombre": jugador_in.Agente}).fetchone()
+        if agente_db:
+            jugador_in.Agente = agente_db[0]
+        else:
+            raise HTTPException(status_code=400, detail=f"El agente '{jugador_in.Agente}' no existe.")
+
+    # Inserción con raw SQL ignorando Id_Player para que PostgreSQL use su DEFAULT
+    insert_query = text("""
+        INSERT INTO jugador (nombre, pais, agente, id_equipo)
+        VALUES (:nombre, :pais, :agente, :id_equipo)
+        RETURNING id_player, nombre, pais, agente, id_equipo;
+    """)
+    try:
+        result = session.execute(insert_query, {
+            "nombre": jugador_in.Nombre,
+            "pais": jugador_in.Pais,
+            "agente": jugador_in.Agente,
+            "id_equipo": jugador_in.Id_Equipo
+        }).fetchone()
+        session.commit()
+        return {
+            "id_player": result[0],
+            "nombre": result[1],
+            "pais": result[2],
+            "agente": result[3],
+            "id_equipo": result[4]
+        }
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Error al insertar jugador: {str(e)}")
 
 @app.get("/auditoria", response_model=List[Audit_Log])
 def ver_logs_auditoria(session: Session = Depends(get_session)):
@@ -178,10 +207,20 @@ def modificar_jugador(id_player: str, jugador_update: Jugador, session: Session 
     if not db_jugador:
         raise HTTPException(status_code=404, detail="Jugador no encontrado")
     
+    # Resolver nombre de agente a ID si es necesario
+    nuevo_agente = jugador_update.agente
+    if nuevo_agente and not nuevo_agente.startswith("AG"):
+        agente_query = text("SELECT id_agente FROM agente WHERE nombre_agente ILIKE :nombre")
+        agente_db = session.execute(agente_query, {"nombre": nuevo_agente}).fetchone()
+        if agente_db:
+            nuevo_agente = agente_db[0]
+        else:
+            raise HTTPException(status_code=400, detail=f"El agente '{nuevo_agente}' no existe.")
+
     # Actualizamos los campos recibidos
     db_jugador.nombre = jugador_update.nombre
     db_jugador.pais = jugador_update.pais
-    db_jugador.agente = jugador_update.agente
+    db_jugador.agente = nuevo_agente
     db_jugador.id_equipo = jugador_update.id_equipo
     
     session.add(db_jugador)
@@ -192,28 +231,91 @@ def modificar_jugador(id_player: str, jugador_update: Jugador, session: Session 
 # ==============================================================================
 # ENDPOINTS PARA EQUIPOS (Creación y Modificación)
 # ==============================================================================
+# ==============================================================================
+# ENDPOINTS PARA EQUIPOS (Corregidos con SQL Puro y Tolerancia de Casing)
+# ==============================================================================
+
 @app.post("/equipos", tags=["Equipos"])
-def crear_equipo(equipo: Equipo, session: Session = Depends(get_session)):
-    # Al tener el ID automático, Postgres se encarga del prefijo 'E'
-    session.add(equipo)
-    session.commit()
-    session.refresh(equipo)
-    return {"message": "Equipo creado con éxito", "equipo": equipo}
+def crear_equipo(equipo_data: dict, session: Session = Depends(get_session)):
+    """
+    Inserta un nuevo equipo de forma transaccional usando SQL puro.
+    Tolera cualquier variación de nombres de llaves que envíe Lovable.
+    """
+    try:
+        # 🛡️ Captura flexible de datos del JSON para destruir el residuo 'None'
+        nombre = equipo_data.get("Nombre_Equipo") or equipo_data.get("nombre_equipo") or equipo_data.get("nombre")
+        coach = equipo_data.get("Coach") or equipo_data.get("coach")
+        region = equipo_data.get("Region") or equipo_data.get("region")
+
+        if not nombre:
+            raise HTTPException(status_code=400, detail="El nombre del equipo es obligatorio")
+
+        # Ejecutamos el query apuntando estrictamente a la tabla física 'equipo' en minúsculas
+        query = text("""
+            INSERT INTO equipo (nombre_equipo, coach, region) 
+            VALUES (:nombre, :coach, :region);
+        """)
+        
+        session.execute(query, {"nombre": nombre, "coach": coach, "region": region})
+        session.commit()
+        
+        return {
+            "status": "success", 
+            "message": f"Equipo '{nombre}' registrado físicamente en la base de datos."
+        }
+        
+    except Exception as e:
+        session.rollback()
+        print(f"❌ ERROR AL CREAR EQUIPO: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.put("/equipos/{id_equipo}", tags=["Equipos"])
-def modificar_equipo(id_equipo: str, equipo_update: Equipo, session: Session = Depends(get_session)):
-    db_equipo = session.get(Equipo, id_equipo)
-    if not db_equipo:
-        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+def modificar_equipo(id_equipo: str, equipo_data: dict, session: Session = Depends(get_session)):
+    """
+    Actualiza los datos de un equipo existente localizándolo por su ID.
+    Evita los errores de coincidencia de mayúsculas en los atributos del JSON.
+    """
+    try:
+        # Verificar primero si el equipo existe en la tabla
+        check_query = text("SELECT 1 FROM equipo WHERE id_equipo = :id;")
+        exists = session.execute(check_query, {"id": id_equipo}).fetchone()
         
-    db_equipo.nombre_equipo = equipo_update.nombre_equipo
-    db_equipo.coach = equipo_update.coach
-    db_equipo.region = equipo_update.region
-    
-    session.add(db_equipo)
-    session.commit()
-    session.refresh(db_equipo)
-    return {"message": "Equipo modificado exitosamente", "equipo": db_equipo}
+        if not exists:
+            raise HTTPException(status_code=404, detail="Equipo no encontrado")
+
+        # Captura flexible para la actualización
+        nombre = equipo_data.get("Nombre_Equipo") or equipo_data.get("nombre_equipo") or equipo_data.get("nombre")
+        coach = equipo_data.get("Coach") or equipo_data.get("coach")
+        region = equipo_data.get("Region") or equipo_data.get("region")
+
+        # Ejecutamos el UPDATE explícito con SQL plano
+        update_query = text("""
+            UPDATE equipo 
+            SET nombre_equipo = :nombre, coach = :coach, region = :region 
+            WHERE id_equipo = :id;
+        """)
+        
+        session.execute(update_query, {
+            "nombre": nombre, 
+            "coach": coach, 
+            "region": region, 
+            "id": id_equipo
+        })
+        session.commit()
+        
+        return {
+            "status": "success", 
+            "message": f"Equipo {id_equipo} modificado exitosamente."
+        }
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        session.rollback()
+        print(f"❌ ERROR AL MODIFICAR EQUIPO: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/equipos", tags=["Equipos"])
 def listar_equipos(session: Session = Depends(get_session)):

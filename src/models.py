@@ -27,11 +27,11 @@ class Mapa(SQLModel, table=True):
     Cantidad_Sites: Optional[int] = None
 
 class Equipo(SQLModel, table=True):
-    __tablename__ = "Equipo"
-    Id_Equipo: str = Field(primary_key=True)
-    Nombre_Equipo: str
-    Coach: Optional[str] = None
-    Region: Optional[str] = None
+    __tablename__ = "equipo"  
+    id_equipo: Optional[str] = Field(default=None, primary_key=True)
+    nombre_equipo: str = Field(alias="Nombre_Equipo")
+    coach: str
+    region: str
 
 class Torneo(SQLModel, table=True):
     __tablename__ = "Torneo"
@@ -155,7 +155,7 @@ class Vista_Estadisticas_Equipos(SQLModel, table=True):
 # ==========================================
 
 class JugadorCreate(SQLModel):
-    Id_Player: str
+    Id_Player: Optional[str] = None
     Nombre: str
     Pais: Optional[str] = None
     Agente: Optional[str] = None
