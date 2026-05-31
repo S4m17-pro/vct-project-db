@@ -33,7 +33,7 @@ Host name/address: localhost
 
 Port: 5432
 
-Maintenance database: vct_stats
+Maintenance database:   
 
 Username: admin
 

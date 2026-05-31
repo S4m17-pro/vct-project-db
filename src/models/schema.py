@@ -37,14 +37,14 @@ class Equipo(SQLModel, table=True):
 
 
 class Torneo(SQLModel, table=True):
-    __tablename__ = "Torneo"
-    Id_Torneo: str = Field(primary_key=True)
+    __tablename__ = "torneo"
+    id_torneo: str = Field(primary_key=True)
     nombre_torneo: str
-    Region: Optional[str] = None
-    Fecha_inicio: Optional[date] = None
-    Fecha_fin: Optional[date] = None
-    Ubicacion: Optional[str] = None
-    Premio_total: Optional[int] = None
+    region: Optional[str] = None
+    fecha_inicio: Optional[date] = None
+    fecha_fin: Optional[date] = None
+    ubicacion: Optional[str] = None
+    premio_total: Optional[int] = None
     ultima_modificacion: Optional[datetime] = None
 
 

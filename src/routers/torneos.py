@@ -32,18 +32,18 @@ def listar_torneos(engine: Engine = Depends(get_db)):
 def crear_torneo(torneo_data: TorneoCreate, session: Session = Depends(get_session),
                  _=Depends(require_role("Admin"))):
     db_torneo = Torneo(
-        Id_Torneo=f"T{len(session.exec(select(Torneo)).all()) + 1:02d}",
+        id_torneo=f"T{len(session.exec(select(Torneo)).all()) + 1:02d}",
         nombre_torneo=torneo_data.nombre_torneo,
-        Region=torneo_data.region,
-        Fecha_inicio=torneo_data.fecha_inicio,
-        Fecha_fin=torneo_data.fecha_fin,
-        Ubicacion=torneo_data.ubicacion,
-        Premio_total=torneo_data.premio_total,
+        region=torneo_data.region,
+        fecha_inicio=torneo_data.fecha_inicio,
+        fecha_fin=torneo_data.fecha_fin,
+        ubicacion=torneo_data.ubicacion,
+        premio_total=torneo_data.premio_total,
     )
     session.add(db_torneo)
     session.commit()
     session.refresh(db_torneo)
-    return {"message": "Torneo creado exitosamente", "id_torneo": db_torneo.Id_Torneo}
+    return {"message": "Torneo creado exitosamente", "id_torneo": db_torneo.id_torneo}
 
 
 @router.put("/torneos/{id_torneo}")
@@ -54,18 +54,9 @@ def modificar_torneo(id_torneo: str, torneo_data: TorneoUpdate,
     if not db_torneo:
         raise HTTPException(status_code=404, detail="Torneo no encontrado")
     data = torneo_data.model_dump(exclude_none=True)
-    if "nombre_torneo" in data:
-        db_torneo.nombre_torneo = data["nombre_torneo"]
-    if "region" in data:
-        db_torneo.Region = data["region"]
-    if "fecha_inicio" in data:
-        db_torneo.Fecha_inicio = data["fecha_inicio"]
-    if "fecha_fin" in data:
-        db_torneo.Fecha_fin = data["fecha_fin"]
-    if "ubicacion" in data:
-        db_torneo.Ubicacion = data["ubicacion"]
-    if "premio_total" in data:
-        db_torneo.Premio_total = data["premio_total"]
+    for attr in ("nombre_torneo", "region", "fecha_inicio", "fecha_fin", "ubicacion", "premio_total"):
+        if attr in data:
+            setattr(db_torneo, attr, data[attr])
     session.add(db_torneo)
     session.commit()
     session.refresh(db_torneo)

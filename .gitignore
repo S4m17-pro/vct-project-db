@@ -16,3 +16,6 @@ vct_postgres_data/
 # SO
 Thumbs.db
 Desktop.ini
+
+# venv
+.venv
