@@ -256,8 +256,9 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     RETURN QUERY
-    SELECT v.nombre_agente::VARCHAR, v.rol::VARCHAR, v.pick_rate
+    SELECT v.nombre_agente::VARCHAR, r.nombre_rol::VARCHAR as role, v.pick_rate
     FROM vista_meta_agentes v
+    JOIN rol r ON v.rol = r.cod_rol
     ORDER BY v.pick_rate DESC;
 END;
 $$;
