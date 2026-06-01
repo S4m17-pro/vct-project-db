@@ -19,3 +19,11 @@ Desktop.ini
 
 # venv
 .venv
+
+#init db
+init_db/
+00-schema.sql
+01-views.sql
+02-procedures.sql
+03-triggers.sql
+04-inserts.sql
